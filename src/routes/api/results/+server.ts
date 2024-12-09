@@ -14,23 +14,34 @@ export async function GET() {
     .groupBy(votes.position, votes.candidate)
     .all(); // Fetch all results
 
-  // Define the winners object
-  const winners: Record<string, { candidate: string; voteCount: number }> = {};
+  // Define an array to hold the winners
+  const winners: Array<{
+    position: string;
+    candidate: string;
+    voteCount: number;
+  }> = [];
 
   // Determine the winner for each position
+  const winnerMap: Record<string, { candidate: string; voteCount: number }> = {};
+
   for (const result of results) {
     if (
-      !winners[result.position] || // No winner yet for this position
-      winners[result.position].voteCount < result.voteCount // New candidate has more votes
+      !winnerMap[result.position] || // No winner yet for this position
+      winnerMap[result.position].voteCount < result.voteCount // New candidate has more votes
     ) {
-      winners[result.position] = {
+      winnerMap[result.position] = {
         candidate: result.candidate,
         voteCount: result.voteCount,
       };
     }
   }
 
-  return new Response(JSON.stringify(Object.values(winners)), {
+  // Convert winnerMap to an array of objects
+  for (const [position, winner] of Object.entries(winnerMap)) {
+    winners.push({ position, candidate: winner.candidate, voteCount: winner.voteCount });
+  }
+
+  return new Response(JSON.stringify(winners), {
     headers: { "Content-Type": "application/json" },
   });
 }
